@@ -2,6 +2,10 @@ import torch
 import numpy as np
 
 
+def to_numpy(x):
+    return x.detach().cpu().numpy()
+
+
 def get_mgrid_2D(shape):
     '''Generates a flattened grid of (x,y,...) coordinates in a range of -1 to 1
     shape: tuple/list with desired dimensions of the grid 

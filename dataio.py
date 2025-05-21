@@ -5,10 +5,6 @@ from PIL import Image
 from utils import get_mgrid_2D
 
 
-def to_numpy(x):
-    return x.detach().cpu().numpy()
-
-
 class ImageFitting(Dataset):
     def __init__(self, filename, normalization=True, size=256):
         super().__init__()
