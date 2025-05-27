@@ -114,7 +114,6 @@ class ImageFitting(Dataset):
         return denormalized_tensor.permute(1, 2, 0)  # Back to H, W, C
     
 
-
 class EncodedImageFitting(ImageFitting):
     """
     Using random Fourier features approach from https://bmild.github.io/fourfeat/
@@ -124,7 +123,7 @@ class EncodedImageFitting(ImageFitting):
     2. Gaussian random Fourier features
     """
     def __init__(self, filename, normalization=False, encoding_type="gaussian", 
-                 embedding_size=256, scale=15, include_original=True, seed=42):
+                 embedding_size=256, scale=15, include_original=False, seed=42):
         super().__init__(filename, normalization)
         
         # Store parameters
