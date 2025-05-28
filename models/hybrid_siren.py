@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from siren import SineLayer
+from .siren import SineLayer
 
 class HybridSiren(nn.Module):
     """A network with specified layers as SIREN layers and others as standard layers."""

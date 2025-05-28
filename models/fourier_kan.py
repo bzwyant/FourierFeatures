@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 
-class FourierFeaturesKANLayer(nn.Module):
+class FfKanLayer(nn.Module):
     """
     KAN layer with learnable Fourier features on edges
     
@@ -21,7 +21,6 @@ class FourierFeaturesKANLayer(nn.Module):
         self.frequencies = nn.Parameter(
             torch.randn(output_dim, input_dim, num_frequencies) * freq_init_scale
         )
-
         self.cos_weights = nn.Parameter(torch.randn(output_dim, input_dim, num_frequencies))
         self.sin_weights = nn.Parameter(torch.randn(output_dim, input_dim, num_frequencies))
 
@@ -35,15 +34,19 @@ class FourierFeaturesKANLayer(nn.Module):
         # Expand input to match the frequency dimensions
         # shape: (batch_size, 1, input_dim, 1)
         x_expanded = x.unsqueeze(1).unsqueeze(-1)
+        # print(f"x_expanded shape: {x_expanded.shape}")
+        # print(x_expanded)
 
         # compute the frequency terms: 2 * np.pi * b_i^T * x
-        freq_terms = 2 * torch.pi * (x_expanded * self.frequencies)
+        freq_terms = 2 * torch.pi * (self.frequencies * x_expanded)
+        # print(f"freq_terms shape: {freq_terms.shape}")
 
         # compute cosine and sine components
         cos_terms = self.cos_weights * torch.cos(freq_terms)
         sin_terms = self.sin_weights * torch.sin(freq_terms)
         # sum over frequencies
         fourier_features = cos_terms + sin_terms
+        
 
         # shape: (batch_size, output_dim)
         output = torch.sum(fourier_features, dim=(-2, -1))
@@ -52,7 +55,7 @@ class FourierFeaturesKANLayer(nn.Module):
 
         return output
 
-    def get_amplitude_phase(self, out_idx, in_idx):
+    def get_amplitude_phase_freq(self, out_idx, in_idx):
         """
         Get amplitude and phase for a specific output and input index
         """
@@ -66,23 +69,20 @@ class FourierFeaturesKANLayer(nn.Module):
         return amplitude, phase, frequencies
     
 
-class FourierFeauturesKAN(nn.Module):
+# TODO: Add residual connections like in the original KAN paper
+class FfKan(nn.Module):
     """
     KAN network with Fourier feature layers.
     """
     def __init__(self, layer_dims, num_frequencies=10, freq_init_scale=1.0, bias=True):
-        """
-        Args:
-            layer_dims (list): List of dimensions for each layer.
-            num_frequencies (int): Number of frequencies to learn for each edge.
-            freq_init_scale (float): Scale for initializing frequency parameters.
-            bias (bool): Whether to include bias terms in the layers.
-        """
         super().__init__()
+
+        if not isinstance(layer_dims, list) or len(layer_dims) < 2:
+            raise Exception("layer_dims must be a list with 2 or more integers")
 
         self.layers = nn.ModuleList()
         for i in range(len(layer_dims) - 1):
-            layer = FourierFeaturesKANLayer(
+            layer = FfKanLayer(
                 input_dim=layer_dims[i],
                 output_dim=layer_dims[i + 1],
                 num_frequencies=num_frequencies,
@@ -92,6 +92,7 @@ class FourierFeauturesKAN(nn.Module):
             self.layers.append(layer)
 
     def forward(self, x):
+        coords = x.clone().detach().requires_grad_(True) 
         for layer in self.layers:
             x = layer(x)
-        return x
+        return x, coords 
