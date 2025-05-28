@@ -105,7 +105,7 @@ class ImageFitting(Dataset):
 
         if len(normalized_tensor.shape) == 3:  # Already in image shape
             tensor_to_denorm = normalized_tensor.permute(2, 0, 1)
-        else:  # Flat tensor
+        else:
             tensor_to_denorm = normalized_tensor.reshape(self.H, self.W, self.channels).permute(2, 0, 1)
 
         denormalized_tensor = tensor_to_denorm * 0.5 + 0.5

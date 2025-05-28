@@ -1,0 +1,57 @@
+# This is from https://github.com/Ali-Meh619/FKAN
+
+import torch
+import torch.nn as nn
+import math as m
+import numpy as np
+
+# This is inspired by Kolmogorov-Arnold Networks but using Chebyshev polynomials instead of splines coefficients
+class FourierKANLayer(nn.Module):
+    def __init__(self, input_dim, output_dim, gridsize,addbias=True,smooth_initialization=False):
+        super(FourierKANLayer, self).__init__()
+        self.gridsize= gridsize
+        self.addbias = addbias
+        self.inputdim = input_dim
+        self.outdim = output_dim
+
+
+        grid_norm_factor = (torch.arange(gridsize) + 1)**2 if smooth_initialization else np.sqrt(gridsize)
+
+        #The normalization has been chosen so that if given inputs where each coordinate is of unit variance,
+        #then each coordinates of the output is of unit variance
+        #independently of the various sizes
+        self.fouriercoeffs = torch.nn.Parameter( torch.randn(2,output_dim,input_dim,gridsize) /
+                                                (np.sqrt(input_dim) * grid_norm_factor ) )
+
+        if( self.addbias ):
+            self.bias  = torch.nn.Parameter( torch.zeros(1,output_dim))
+
+    def forward(self, x):
+
+        xshp = x.shape
+        
+        outshape = xshp[0:-1]+(self.outdim,)
+        x = torch.reshape(x,(-1,self.inputdim))
+        
+
+        #Starting at 1 because constant terms are in the bias
+        k = torch.reshape( torch.arange(1,self.gridsize+1,device=x.device),(1,1,1,self.gridsize))
+        
+        xrshp = torch.reshape(x,(x.shape[0],1,x.shape[1],1) )
+        
+        #This should be fused to avoid materializing memory
+        c = torch.cos( k*xrshp )
+        s = torch.sin( k*xrshp )
+        
+        #We compute the interpolation of the various functions defined by their fourier coefficient for each input coordinates and we sum them
+        y =  torch.sum( c*self.fouriercoeffs[0:1],(-2,-1))
+        y += torch.sum( s*self.fouriercoeffs[1:2],(-2,-1))
+        if( self.addbias):
+            y += self.bias
+        #End fuse
+
+
+        y = torch.reshape( y, outshape)
+        return y
+
+

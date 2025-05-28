@@ -5,6 +5,8 @@ from torch import nn
 class FfKanLayer(nn.Module):
     """
     KAN layer with learnable Fourier features on edges
+    this is inspired by a the FKAN model (https://github.com/Ali-Meh619/FKAN)
+    and FourierFeatures encoding (https://bmild.github.io/fourfeat/).
     
     Each edge learns a, b, c from the equation:
     f(x) = a * cos(2 * pi * (b^T @ x)) + c * sin(2 * pi * (b^T @ x))
