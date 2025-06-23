@@ -6,14 +6,14 @@ from plotting import plot_images
 import os
 
 
-def train_inr(
+def train_img_fitting(
     model,
     optimizer,
     img_fitting,
     device=None,
     epochs=300,
     batch_size=4096,
-    steps_til_summary=30,
+    epochs_til_summary=30,
     model_save_path=None,
     checkpoint_save=False,
     plots_dir=None
@@ -72,7 +72,7 @@ def train_inr(
             psnr_vals.append(psnr_val.item())
 
         # Visualize results after each epoch
-        if epoch % steps_til_summary == 0:
+        if epoch % epochs_til_summary == 0:
             print(f"Epoch: {epoch} | Loss: {avg_loss:.5f} | PSNR: {psnr_val:.4f} | Normalized: {img_fitting.normalization}")
             
             suptitle = f"Epochs={epoch} | PSNR={psnr_val:.4f}"

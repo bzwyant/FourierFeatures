@@ -2,14 +2,10 @@ import torch
 from torch import nn
 
 
-class FfKanLayer(nn.Module):
+class FourierKANLayer(nn.Module):
     """
     KAN layer with learnable Fourier features on edges
     this is inspired by a the FKAN model (https://github.com/Ali-Meh619/FKAN)
-    and FourierFeatures encoding (https://bmild.github.io/fourfeat/).
-    
-    Each edge learns a, b, c from the equation:
-    f(x) = a * cos(2 * pi * (b^T @ x)) + c * sin(2 * pi * (b^T @ x))
     
     where:
     """
@@ -23,8 +19,8 @@ class FfKanLayer(nn.Module):
         self.frequencies = nn.Parameter(
             torch.randn(output_dim, input_dim, num_frequencies) * freq_init_scale
         )
-        self.cos_weights = nn.Parameter(torch.randn(output_dim, input_dim, num_frequencies))
-        self.sin_weights = nn.Parameter(torch.randn(output_dim, input_dim, num_frequencies))
+        self.cos_weights = nn.Parameter(torch.randn(output_dim, input_dim))
+        self.sin_weights = nn.Parameter(torch.randn(output_dim, input_dim))
 
         self.bias = bias
         if bias:
@@ -72,7 +68,7 @@ class FfKanLayer(nn.Module):
     
 
 # TODO: Add residual connections like in the original KAN paper
-class FfKan(nn.Module):
+class FourierKAN(nn.Module):
     """
     KAN network with Fourier feature layers.
     """
@@ -84,7 +80,7 @@ class FfKan(nn.Module):
 
         self.layers = nn.ModuleList()
         for i in range(len(layer_dims) - 1):
-            layer = FfKanLayer(
+            layer = FourierKANLayer(
                 input_dim=layer_dims[i],
                 output_dim=layer_dims[i + 1],
                 num_frequencies=num_frequencies,

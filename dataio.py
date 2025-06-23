@@ -123,7 +123,8 @@ class EncodedImageFitting(ImageFitting):
     2. Gaussian random Fourier features
     """
     def __init__(self, filename, normalization=False, encoding_type="gaussian", 
-                 embedding_size=256, scale=15, include_original=False, seed=42):
+                 embedding_size=256, scale=15, include_original=False, seed=42,
+                 shuffle=False, channels=None):
         super().__init__(filename, normalization)
         
         # Store parameters
@@ -144,6 +145,9 @@ class EncodedImageFitting(ImageFitting):
         else:
             self.embedding_size = None
             self.B = None
+
+        # For test with shuffled coordinates (should not work in practice)
+        self.shuffle = shuffle
         
         # Create the positional encoding for coordinates
         self.encoded_coords = self._encode_coordinates(self.coords)
@@ -202,9 +206,14 @@ class EncodedImageFitting(ImageFitting):
         Apply the selected encoding method to coordinates.
         """
         if self.encoding_type == "basic":
-            return self._basic_encoding(coords)
+            encoded_coords = self._basic_encoding(coords)
         else:  # gaussian
-            return self._gaussian_encoding(coords)
+            encoded_coords = self._gaussian_encoding(coords)
+
+        if self.shuffle:
+            encoded_coords = encoded_coords[torch.randperm(encoded_coords.shape[0])]
+        
+        return encoded_coords
     
     def to(self, device):
         """Move tensors to specified device, extending the parent method"""
@@ -219,11 +228,15 @@ class EncodedImageFitting(ImageFitting):
         Returns encoded coordinates and pixels for given indices,
         overriding the parent method
         """
+        if self.channels is not None:
+            assert self.channels <= self.pixels.shape[1], "Number of channels exceeds available channels."
+            pixels = self.pixels[indices][self.channels]
+
         return {
             'indices': indices,
             'coords': self.encoded_coords[indices],  # Original coords for reference
             # 'encoded_coords': self.encoded_coords[indices],  # Encoded coords
-            'pixels': self.pixels[indices]
+            'pixels': pixels if self.channels is not None else self.pixels[indices]
         }
     
     def __getitem__(self, idx):

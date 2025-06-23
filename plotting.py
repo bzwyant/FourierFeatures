@@ -1,5 +1,6 @@
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def plot_images(images, suptitle=None, titles=None, figsize=(20, 10), save_path=None):
@@ -36,3 +37,49 @@ def plot_images(images, suptitle=None, titles=None, figsize=(20, 10), save_path=
     
     plt.show()
     plt.close()
+
+
+def plot_rgb_distribution_kde(pixels, x_range=None):
+    """
+    Plot RGB distributions using Kernel Density Estimation for very smooth curves
+    """
+    from scipy.stats import gaussian_kde
+    
+    # Extract RGB channels
+    red_values = pixels[:, 0]
+    green_values = pixels[:, 1] 
+    blue_values = pixels[:, 2]
+    
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    # Determine the range for evaluation
+
+    if x_range is None:
+        all_values = np.concatenate([red_values, green_values, blue_values])
+        x_min = np.min(all_values)
+        x_max = np.max(all_values)
+    else:
+        x_min, x_max = x_range
+
+    x_range = np.linspace(x_min, x_max, 300)
+    
+    # Calculate KDE for each channel
+    red_kde = gaussian_kde(red_values)
+    green_kde = gaussian_kde(green_values)
+    blue_kde = gaussian_kde(blue_values)
+    
+    # Plot smooth curves
+    ax.plot(x_range, red_kde(x_range), color='red', linewidth=2, label='Red', alpha=0.8)
+    ax.plot(x_range, green_kde(x_range), color='green', linewidth=2, label='Green', alpha=0.8)
+    ax.plot(x_range, blue_kde(x_range), color='blue', linewidth=2, label='Blue', alpha=0.8)
+    
+    # Customize the plot
+    ax.set_xlabel('Pixel Value')
+    ax.set_ylabel('Density')
+    ax.set_title('RGB Value Distributions')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
